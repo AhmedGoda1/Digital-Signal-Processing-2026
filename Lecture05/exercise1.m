@@ -1,26 +1,46 @@
-%% Exercise 1: Build a Square Wave from Harmonics
+%% Exercise 2: Find Two Frequencies with the FFT
 clear; clc; close all;
 
-t = linspace(-1, 1, 4000);
-H_values = [1, 3, 9, 25];
+fs = 200;
+T = 1;
+t = 0:1/fs:T-1/fs;
 
-fig = figure('Name', 'Square Wave Harmonics', 'Color', 'w', 'Position', [100 100 950 650]);
+x = 0.8*sin(2*pi*15*t) + 0.4*sin(2*pi*40*t);
 
-for idx = 1:length(H_values)
-    H = H_values(idx);
-    x = zeros(size(t));
+N = length(x);
+Y = fft(x);
 
-    for k = 1:2:H
-        x = x + (4/pi) * sin(2*pi*k*t) / k;
-    end
+P2 = abs(Y/N);
+P1 = P2(1:N/2+1);
+P1(2:end-1) = 2*P1(2:end-1);
 
-    subplot(2, 2, idx);
-    plot(t, x, 'b', 'LineWidth', 1.3);
-    grid on;
-    xlabel('Time (s)');
-    ylabel('Amplitude');
-    ylim([-1.4 1.4]);
-    title(sprintf('Square Wave Approximation (H = %d)', H));
+f = fs*(0:N/2)/N;
+
+fig = figure('Name', 'Two-Frequency Signal and Spectrum', 'Color', 'w', 'Position', [100 100 900 600]);
+
+% Time domain (zoomed to first 0.25s for visual clarity)
+subplot(2, 1, 1);
+plot(t, x, 'b', 'LineWidth', 1.2);
+xlim([0 0.25]);
+grid on;
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Time-Domain Signal (First 0.25 s)');
+
+% Single-sided amplitude spectrum
+subplot(2, 1, 2);
+stem(f, P1, 'r', 'filled', 'MarkerSize', 4, 'LineWidth', 1.1);
+grid on;
+xlabel('Frequency (Hz)');
+ylabel('Amplitude |P1(f)|');
+title('Single-Sided Amplitude Spectrum');
+
+saveas(fig, 'two-frequency-spectrum.png');
+
+% Display bin spacing and peaks
+df = fs / N;
+fprintf('Frequency bin spacing: %.2f Hz\n', df);
+[pks, locs] = findpeaks(P1, f, 'MinPeakHeight', 0.1);
+for k = 1:length(pks)
+    fprintf('Peak %d: Frequency = %.2f Hz, Amplitude = %.4f\n', k, locs(k), pks(k));
 end
-
-saveas(fig, 'square-wave-comparison.png');
